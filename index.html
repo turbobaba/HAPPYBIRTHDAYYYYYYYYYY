@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Profile UI</title>
+    <!-- Thư viện FontAwesome để nhúng các icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* =========================================
+           1. CÀI ĐẶT CHUNG (VARIABLES & RESET)
+           ========================================= */
+        :root {
+            --primary-color: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(125, 31, 31, 0.2);
+            --transition-speed: 0.5s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            overflow: hidden; /* Ngăn cuộn trang */
+            color: var(--primary-color);
+        }
+
+        /* =========================================
+           2. QUẢN LÝ TRANG (PAGES)
+           ========================================= */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        /* Trang 1: Màn hình chờ */
+        #page1 {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            z-index: 10;
+        }
+
+        .enter-btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .enter-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05); /* Hiệu ứng phình to khi hover */
+        }
+
+        /* Trang 2: Giao diện chính */
+        #page2 {
+            opacity: 0;
+            pointer-events: none; /* Vô hiệu hóa tương tác khi chưa hiển thị */
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('1794027598588_4926036572392671546_4926036572392671546_816e26cad22b55e6559734621f84c686.jpg'); /* Ảnh nền phía sau */
+            background-size: cover;
+            background-position: center;
+        }
+
+        #page2.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Làm mờ background cho Trang 2 */
+        .bg-blur {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
+        }
+
+        /* =========================================
+           3. THIẾT KẾ THẺ KÍNH (GLASSMORPHISM CARD)
+           ========================================= */
+        .glass-card {
+            width: 100%;
+            max-width: 450px; /* Mô phỏng tỷ lệ màn hình điện thoại giống ảnh */
+            height: 90vh;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        /* Layout các phần trong thẻ */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .social-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 1.2rem;
+        }
+
+        .social-icons i {
+            cursor: pointer;
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        .social-icons i:hover {
+            color: #00d2ff;
+            transform: scale(1.2) rotate(5deg); /* Hiệu ứng hover cho icon */
+        }
+
+        .main-content {
+            position: absolute;
+            right: 20px;
+            top: 15%;
+            text-align: right;
+            z-index: 2;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            writing-mode: vertical-rl; /* Chữ dọc giống ảnh */
+            text-orientation:upright;
+    /*        transform: rotate(180deg);*/
+            opacity: 0.9;
+        }
+
+        /* Hình ảnh nhân vật trung tâm */
+        .center-image-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 400px;
+            z-index: 1;
+        }
+
+        .center-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: float 4s ease-in-out infinite; /* Tạo sức sống bằng hiệu ứng lơ lửng */
+        }
+
+        /* Trình phát nhạc phía dưới */
+        .bottom-player {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-radius: 20px;
+            z-index: 2;
+        }
+
+        .player-controls {
+            display: flex;
+            gap: 20px;
+            font-size: 1.5rem;
+        }
+
+        .player-controls i {
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .player-controls i:hover {
+            color: #00d2ff;
+        }
+
+        .play-btn-wrapper {
+            animation: pulse 2s infinite; /* Nút play đập nhịp nhàng */
+        }
+
+        .song-info {
+            text-align: right;
+        }
+
+        .song-info span {
+            display: block;
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .song-info strong {
+            font-size: 0.9rem;
+        }
+
+        /* =========================================
+           4. ANIMATIONS (HIỆU ỨNG CHUYỂN ĐỘNG)
+           ========================================= */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TRANG 1: Landing Page -->
+    <div id="page1" class="page">
+        <h1 style="margin-bottom: 20px; font-weight: 300;">Trải nghiệm không gian</h1>
+        <!-- Nút này kích hoạt chuyển trang và cấp quyền phát âm thanh -->
+        <button class="enter-btn" id="enterBtn">
+            Bắt đầu <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+        </button>
+    </div>
+
+    <!-- TRANG 2: Main Design UI -->
+    <div id="page2" class="page">
+        <div class="bg-blur"></div>
+        
+        <!-- Nhúng âm thanh (Thay link .mp3 của bạn vào thuộc tính src) -->
+        <audio id="bg-audio" loop>
+            <source src="Download.mp3" type="audio/mpeg">
+        </audio>
+
+        <div class="glass-card">
+            <!-- Điều hướng trên cùng -->
+            <div class="top-nav">
+                <div class="social-icons">
+                    <i class="fa-brands fa-instagram"></i>
+                    <i class="fa-brands fa-facebook-f"></i>
+                    <i class="fa-brands fa-twitter"></i>
+                    <i class="fa-brands fa-apple"></i>
+                    <i class="fa-brands fa-android"></i>
+                </div>
+                <div style="text-align: right; opacity: 0.8; font-size: 0.8rem;">
+                    DESIGN BY<br><strong>ANDY_DEP_TRAI</strong>
+                </div>
+            </div>
+
+            <!-- Ảnh nhân vật lơ lửng ở giữa -->
+            <div class="center-image-container">
+                <!-- URL ảnh trong suốt (PNG) của nhân vật -->
+                <img src="1794027598588_4926036572392671546_4926036572392671546_816e26cad22b55e6559734621f84c686.jpg" alt="Character" class="center-image">
+            </div>
+
+            <!-- Text dọc -->
+            <div class="main-content">
+                <div class="title">HAI_XINH_GÁI</div>
+            </div>
+
+            <!-- Trình phát nhạc dưới cùng -->
+            <div class="bottom-player">
+                <div class="player-controls">
+                    <i class="fa-solid fa-backward-step"></i>
+                    <div class="play-btn-wrapper" id="playToggle">
+                        <i class="fa-solid fa-circle-pause" id="playIcon"></i>
+                    </div>
+                    <i class="fa-solid fa-forward-step"></i>
+                </div>
+                <div class="song-info">
+                    <span>PLAYING NOW</span>
+                    <strong>CHUC_MUNG_SINH_NHATTTT</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         5. JAVASCRIPT (LOGIC TƯƠNG TÁC)
+         ========================================= -->
+    <script>
+        // Lấy các DOM elements cần thiết
+        const page1 = document.getElementById('page1');
+        const page2 = document.getElementById('page2');
+        const enterBtn = document.getElementById('enterBtn');
+        const audio = document.getElementById('bg-audio');
+        const playToggle = document.getElementById('playToggle');
+        const playIcon = document.getElementById('playIcon');
+
+        let isPlaying = false;
+
+        // Xử lý sự kiện click để chuyển từ Trang 1 sang Trang 2
+        enterBtn.addEventListener('click', () => {
+            // 1. Mờ trang 1 đi
+            page1.style.opacity = '0';
+            
+            // 2. Chờ CSS transition chạy xong (0.5s) rồi ẩn hẳn trang 1 và hiện trang 2
+            setTimeout(() => {
+                page1.style.display = 'none';
+                page2.classList.add('active'); // Thêm class để kích hoạt opacity=1 cho trang 2
+                
+                // 3. Tự động phát nhạc (Trình duyệt cho phép vì người dùng đã click)
+                audio.play();
+                isPlaying = true;
+            }, 500); // 500ms tương đương biến --transition-speed trong CSS
+        });
+
+        // Xử lý nút Play/Pause nhạc ở Trang 2
+        playToggle.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                playIcon.classList.remove('fa-circle-pause');
+                playIcon.classList.add('fa-circle-play');
+                playToggle.style.animation = 'none'; // Dừng hiệu ứng đập khi pause
+            } else {
+                audio.play();
+                playIcon.classList.remove('fa-circle-play');
+                playIcon.classList.add('fa-circle-pause');
+                playToggle.style.animation = 'pulse 2s infinite'; // Bật lại hiệu ứng đập
+            }
+            isPlaying = !isPlaying;
+        });
+    </script>
+</body>
+</html>
